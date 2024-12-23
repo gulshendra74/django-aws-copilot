@@ -1,0 +1,109 @@
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  DeployEnvironmentAddons:
+    Type: String
+    Default: false
+    Description: Whether to deploy environment addons in this folder.
+    AllowedValues:
+      - true
+      - false
+
+Conditions:
+  ShouldDeployPostgres: !Equals [!Ref DeployEnvironmentAddons, 'true']
+
+Resources:
+  DBSubnetGroup:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Get subnet group to place DB into
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Group of subnets to place DB into
+      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+
+  DatabaseSecurityGroup:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Add DB to VPC to be able to talk to others
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DB Security Group
+      VpcId: { 'Fn::ImportValue': !Sub '${App}-${Env}-VpcId' }
+
+  DBIngress:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Allow ingress from containers in my application to the DB cluster
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from Fargate containers
+      GroupId: !Ref 'DatabaseSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+
+  DBInstance:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Create the actual DB cluster
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      EngineVersion: 16.4
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      MultiAZ: false
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      DeletionProtection: true
+      BackupRetentionPeriod: 7
+      EnablePerformanceInsights : true
+      DBName: postgres
+      MasterUsername: postgres
+      MasterUserPassword: !Sub '{{resolve:ssm-secure:/copilot/${App}/${Env}/secrets/SQL_PASSWORD:1}}'
+      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      VPCSecurityGroups:
+        - !Ref 'DatabaseSecurityGroup'
+
+  DBNameParam:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Store the DB name in SSM so that other services can retrieve it
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/SQL_DATABASE'
+      Type: String
+      Value: !GetAtt 'DBInstance.DBName'
+
+  DBEndpointAddressParam:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Store the DB endpoint in SSM so that other services can retrieve it
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/SQL_HOST'
+      Type: String
+      Value: !GetAtt 'DBInstance.Endpoint.Address'
+
+  DBPortParam:
+    Condition: ShouldDeployPostgres
+    Metadata:
+      'aws:copilot:description': Store the DB port in SSM so that other services can retrieve it
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/SQL_PORT'
+      Type: String
+      Value: !GetAtt 'DBInstance.Endpoint.Port'
+
+Outputs:
+  DatabaseSecurityGroup:
+    Condition: ShouldDeployPostgres
+    Description: Security group for DB
+    Value: !Ref 'DatabaseSecurityGroup'
