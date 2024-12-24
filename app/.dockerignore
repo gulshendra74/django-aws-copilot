@@ -1,4 +1,12 @@
+.idea/
+
+env/
 venv/
+.env/
+.venv/
+
+.aws.env
+.dev.env
 
 *.pyc
 __pycache__/

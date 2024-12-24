@@ -42,7 +42,6 @@ network:
   # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
 variables:
-  TZ: Europe/Berlin
   COMMAND: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --access-logfile - --error-logfile -
   PORT: 8000
 env_file: app/.aws.env
