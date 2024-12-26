@@ -5,7 +5,7 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  DeployEnvironmentAddons:
+  ShouldDeployPostgres:
     Type: String
     Default: false
     Description: Whether to deploy environment addons in this folder.
@@ -14,7 +14,7 @@ Parameters:
       - false
 
 Conditions:
-  ShouldDeployPostgres: !Equals [!Ref DeployEnvironmentAddons, 'true']
+  ShouldDeployPostgres: !Equals [!Ref ShouldDeployPostgres, 'true']
 
 Resources:
   DBSubnetGroup:
