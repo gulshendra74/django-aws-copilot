@@ -1,2 +1,2 @@
 Parameters:
-  DeployEnvironmentAddons: false
+  ShouldDeployPostgres: false
