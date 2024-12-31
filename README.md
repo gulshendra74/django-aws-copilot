@@ -1,6 +1,6 @@
 # Deploying Django to AWS ECS with AWS Copilot
 
-Check out the [tutorial](#).
+Check out the [tutorial](https://testdriven.io/blog/django-ecs-aws-copilot/).
 
 ## Want to use this project?
 
@@ -24,4 +24,4 @@ Check out the [tutorial](#).
 
 ### Deploy to AWS
 
-Check out the [tutorial](#).
+Check out the [tutorial](https://testdriven.io/blog/django-ecs-aws-copilot/).
