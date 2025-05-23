@@ -1,14 +1,14 @@
 Parameters:
   App:
     Type: String
-    Description: Your application's name.
+    Description: django-images
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
   ShouldDeployPostgres:
     Type: String
     Default: false
-    Description: Whether to deploy environment addons in this folder.
+    Description: dev
     AllowedValues:
       - true
       - false
